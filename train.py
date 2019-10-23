@@ -53,7 +53,7 @@ if __name__ == "__main__":
     class_names = load_classes(data_config["names"])
 
     # Initiate model
-    model = Darknet(opt.model_def).to(device)
+    model = DarknetLoss(opt.model_def).to(device)
     model.apply(weights_init_normal)
 
     # If specified we start from checkpoint
@@ -102,7 +102,7 @@ if __name__ == "__main__":
             imgs = Variable(imgs.to(device))
             targets = Variable(targets.to(device), requires_grad=False)
 
-            loss, outputs = model(imgs, targets)
+            loss = model(imgs, targets)
             loss.backward()
 
             if batches_done % opt.gradient_accumulations:
