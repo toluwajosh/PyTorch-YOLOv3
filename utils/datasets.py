@@ -92,6 +92,14 @@ class ListDataset(Dataset):
         # Extract image as PyTorch tensor
         img = transforms.ToTensor()(Image.open(img_path).convert('RGB'))
 
+        if img is None:  # try again for another index
+            for i in range(10):
+                index = random.randint(0, len(self.img_files))
+                img_path = self.img_files[index % len(self.img_files)].rstrip()
+                img = transforms.ToTensor()(Image.open(img_path).convert('RGB'))
+                if img is not None:
+                    break
+
         # Handle images with less than three channels
         if len(img.shape) != 3:
             img = img.unsqueeze(0)
@@ -130,7 +138,6 @@ class ListDataset(Dataset):
 
             targets = torch.zeros((len(boxes), 6))
             targets[:, 1:] = boxes
-
         # Apply augmentations
         if self.augment:
             if np.random.random() < 0.5:
