@@ -102,17 +102,11 @@ if __name__ == "__main__":
     for epoch in range(opt.epochs):
         model.train()
         start_time = time.time()
-        # print(dataloader[0])
-        # exit(0)
-        # try:
-        # except Exception:
-        #     continue
         for batch_i, (_, imgs, targets) in enumerate(dataloader):
             batches_done = len(dataloader) * epoch + batch_i
 
             imgs = Variable(imgs.to(device))
             targets = Variable(targets.to(device), requires_grad=False)
-            print(targets)
             loss, outputs = model(imgs, targets)
 
             loss.backward()

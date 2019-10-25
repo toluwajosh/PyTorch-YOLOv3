@@ -26,7 +26,8 @@ def pad_to_square(img, pad_value):
 
 
 def resize(image, size):
-    image = F.interpolate(image.unsqueeze(0), size=size, mode="nearest").squeeze(0)
+    image = F.interpolate(image.unsqueeze(0), size=size,
+                          mode="nearest").squeeze(0)
     return image
 
 
@@ -64,7 +65,8 @@ class ListDataset(Dataset):
         print(self.img_files[0])
         if label_files is None:
             self.label_files = [
-                path.replace("images", "labels").replace(".png", ".txt").replace(".jpg", ".txt")
+                path.replace("images", "labels").replace(
+                    ".png", ".txt").replace(".jpg", ".txt")
                 for path in self.img_files
             ]
         else:
@@ -81,6 +83,15 @@ class ListDataset(Dataset):
         self.max_size = self.img_size + 3 * 32
         self.batch_count = 0
 
+    def _reload_path(self):
+        print("bad file!!!\n\n\n\n\n")
+        for i in range(10):
+            index = random.randint(0, len(self.img_files))
+            img_path = self.img_files[index % len(self.img_files)].rstrip()
+            if img_path not in self.bad_files:
+                break
+        return img_path
+
     def __getitem__(self, index):
 
         # ---------
@@ -88,17 +99,32 @@ class ListDataset(Dataset):
         # ---------
 
         img_path = self.img_files[index % len(self.img_files)].rstrip()
+        print(img_path)
+        self.bad_files = [
+            "/media/tjosh/ssd_vault/zab/TrainDB/images/20180830-132718_01/20180830-132745.327_I01_0000801_wt_calib.ppm3_croped.ppm",
+            "/media/tjosh/ssd_vault/zab/TrainDB/images/20180830-133426_01/20180830-133502.091_I01_0001063_wt_calib.ppm3_croped.ppm",
+            "/media/tjosh/ssd_vault/zab/TrainDB/images/20180830-131749_01/20180830-131827.336_I01_0001131_wt_calib.ppm3_croped.ppm",
+            "/media/tjosh/ssd_vault/zab/TrainDB/images/20180830-103557_01/20180830-103627.221_I01_0000887_wt_calib.ppm3_croped.ppm",
+            "/media/tjosh/ssd_vault/zab/TrainDB/images/20180830-134901_01/20180830-134937.132_I01_0001067_wt_calib.ppm3_croped.ppm",
+            "/media/tjosh/ssd_vault/zab/TrainDB/images/20180830-134901_01/20180830-134938.198_I01_0001099_wt_calib.ppm3_croped.ppm",
+            "/media/tjosh/ssd_vault/zab/TrainDB/images/20180830-105751_01/20180830-105825.582_I01_0001030_wt_calib.ppm3_croped.ppm",
+            "/media/tjosh/ssd_vault/zab/TrainDB/images/20180830-085109_01/20180830-085143.340_I01_0001003_wt_calib.ppm3_croped.ppm",
+            "/media/tjosh/ssd_vault/zab/TrainDB/images/20180830-103557_01/20180830-103624.521_I01_0000806_wt_calib.ppm3_croped.ppm",
+            "/media/tjosh/ssd_vault/zab/TrainDB/images/20180830-085109_01/20180830-085146.573_I01_0001100_wt_calib.ppm3_croped.ppm"
+        ]
+        if img_path in self.bad_files:
+            img_path = self._reload_path()
 
         # Extract image as PyTorch tensor
         img = transforms.ToTensor()(Image.open(img_path).convert('RGB'))
 
-        if img is None:  # try again for another index
-            for i in range(10):
-                index = random.randint(0, len(self.img_files))
-                img_path = self.img_files[index % len(self.img_files)].rstrip()
-                img = transforms.ToTensor()(Image.open(img_path).convert('RGB'))
-                if img is not None:
-                    break
+        # if img is None:  # try again for another index
+        #     for i in range(10):
+        #         index = random.randint(0, len(self.img_files))
+        #         img_path = self.img_files[index % len(self.img_files)].rstrip()
+        #         img = transforms.ToTensor()(Image.open(img_path).convert('RGB'))
+        #         if img is not None:
+        #             break
 
         # Handle images with less than three channels
         if len(img.shape) != 3:
@@ -120,6 +146,8 @@ class ListDataset(Dataset):
         targets = None
         if os.path.exists(label_path):
             boxes = torch.from_numpy(np.loadtxt(label_path).reshape(-1, 5))
+            print("boxes", boxes)
+            exit(0)
             # Extract coordinates for unpadded + unscaled image
             x1 = w_factor * (boxes[:, 1] - boxes[:, 3] / 2)
             y1 = h_factor * (boxes[:, 2] - boxes[:, 4] / 2)
@@ -155,7 +183,8 @@ class ListDataset(Dataset):
         targets = torch.cat(targets, 0)
         # Selects new image size every tenth batch
         if self.multiscale and self.batch_count % 10 == 0:
-            self.img_size = random.choice(range(self.min_size, self.max_size + 1, 32))
+            self.img_size = random.choice(
+                range(self.min_size, self.max_size + 1, 32))
         # Resize images to input shape
         imgs = torch.stack([resize(img, self.img_size) for img in imgs])
         self.batch_count += 1
